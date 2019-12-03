@@ -1,5 +1,4 @@
 ﻿// MPI_Primes.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
-//
 
 #include <mpi.h>
 #include <stdio.h>
@@ -7,8 +6,6 @@
 #include <cstdlib>
 #include <cmath>
 #include <vector>
-
-#define _CRT_SECURE_NO_WARNINGS
 
 using namespace std;
 
@@ -25,27 +22,29 @@ bool isPrime(int num)
 	return true;
 }
 
-int n;//上届
+int n;//上界
 int world_size; //number of processes involved in our calculations
-
 int* curPrimes;//the primes that we will calculate in THIS process
 int k;//素数个数
-
 int* recvPrimes;//temperary variable for primes the main process will recieve from secondary ones
-
 vector <int> allPrimes;//保存所有素数
 
 int main(int argc, char** argv)
 {
+	FILE* stream;
+	/*
+	//打印参数信息
 	int x = argc;//传入的参数个数
-	printf("参数个数: %d\n", x);//格式化输出
-	while (x)   //当(统计参数个数)
-		printf("参数%d: %s\n", x, argv[--x]);   //格式化输出
+	printf("传入参数个数: %d\n", x);//格式化输出
+	for (int i = 0; i < x; i++)
+		cout << "参数" << i + 1 << ": " << argv[i] << endl;
+	*/
+
 	//check if we have the right number of arguments
 	//只接受除运行程序命令argv[0]外的一个参数argv[1]
 	if (argc != 2)
 	{
-		cout << "invalid number of arguments" << endl;
+		cout << "Invalid number of arguments" << endl;
 		return 0;
 	}
 	//calculate n as per requrenment
@@ -75,9 +74,7 @@ int main(int argc, char** argv)
 		MPI_Send(&k, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 		MPI_Send(curPrimes, k, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	}
-
 	int recvSize;
-
 	if (world_rank == 0)
 	{
 		//this runs only on main process
@@ -85,7 +82,7 @@ int main(int argc, char** argv)
 		for (int i = 0; i < k; i++)
 			allPrimes.push_back(curPrimes[i]);
 		//clear the memory of our primes
-		delete curPrimes;
+		delete[] curPrimes;
 		//go through all the recieved primes and add them to our vector
 		for (int i = 1; i < world_size; i++)
 		{
@@ -95,14 +92,14 @@ int main(int argc, char** argv)
 			MPI_Recv(recvPrimes, recvSize, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			for (int j = 0; j < recvSize; j++)
 				allPrimes.push_back(recvPrimes[j]);
-			delete recvPrimes;
+			delete[] recvPrimes;
 		}
 
-		cout << "Overall " << allPrimes.size() << " primes. " << endl;
+		string file_name = "primes.txt";
+		cout << "\nOverall " << allPrimes.size() << " primes. " << endl;
+		cout << "所有素数将写入到文件 " << file_name << " 中！" << endl;
 		//output all primes to a file
-		FILE* stream;
 		freopen_s(&stream, "primes.txt", "w", stdout);
-
 		for (int i = 0; i < allPrimes.size(); i++)
 		{
 			cout << allPrimes[i] << " ";
@@ -110,6 +107,7 @@ int main(int argc, char** argv)
 				cout << "\n";
 		}
 		printf("\n");
+		freopen_s(&stream, "CON", "w", stdout);
 	}
 	MPI_Finalize();
 	return 0;
