@@ -339,3 +339,4 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 MPI_Primes/primes.txt
+MPI_Primes/MPI_Primes/primes.txt
